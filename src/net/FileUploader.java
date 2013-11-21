@@ -14,7 +14,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 import tools.StringJsonParser;
 
-public class Uploader {
+public class FileUploader {
 	public static final String SEND_URL = "https://www.virustotal.com/vtapi/v2/file/scan";
 	public static final String RESCAN_URL = "https://www.virustotal.com/vtapi/v2/file/rescan";
 	public static final String RETRIEVE_URL = "https://www.virustotal.com/vtapi/v2/file/report";
@@ -26,14 +26,17 @@ public class Uploader {
 	private String sha1;
 	private String sha256;
 	private File f2upload;
-	public Uploader(File fileToUpload) {
+
+	public FileUploader(File fileToUpload) {
 		f2upload = fileToUpload;
 	}
-	
+
 	/**
 	 * upload file to VirusTotal
+	 * 
 	 * @return json of response in String
-	 * @throws IOException if an I/O exception occurs.
+	 * @throws IOException
+	 *             if an I/O exception occurs.
 	 */
 	public String scan() throws IOException {
 		String bound = "41184676334";
@@ -41,11 +44,17 @@ public class Uploader {
 		HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
 		conn.setRequestMethod("POST");
 		conn.setDoOutput(true);
-		conn.addRequestProperty("Content-Type", "multipart/form-data; boundary=" + bound);
+		conn.addRequestProperty("Content-Type",
+				"multipart/form-data; boundary=" + bound);
 		OutputStream os = new DataOutputStream(conn.getOutputStream());
 		StringBuilder content = new StringBuilder();
-		content.append("--" + bound + "\r\nContent-Disposition: form-data; name=\"apikey\"\r\n\r\n" + APIKEY + "\r\n");
-		content.append("--" + bound + "\r\nContent-Disposition: form-data; name=\"file\"; filename=\"" + f2upload.getName() + "\"\r\n");
+		content.append("--" + bound
+				+ "\r\nContent-Disposition: form-data; name=\"apikey\"\r\n\r\n"
+				+ APIKEY + "\r\n");
+		content.append("--"
+				+ bound
+				+ "\r\nContent-Disposition: form-data; name=\"file\"; filename=\""
+				+ f2upload.getName() + "\"\r\n");
 		content.append("Content-Type: application/octet-stream\r\n\r\n");
 		os.write(content.toString().getBytes());
 		InputStream is = new FileInputStream(f2upload);
@@ -71,11 +80,13 @@ public class Uploader {
 		conn.disconnect();
 		return sb.toString();
 	}
-	
+
 	/**
 	 * get the result of scan if scan is finished.
+	 * 
 	 * @return json of response in String
-	 * @throws IOException if an I/O exception occurs.
+	 * @throws IOException
+	 *             if an I/O exception occurs.
 	 */
 	public String getReport() throws IOException {
 		if (!isAnalyzed) {
@@ -87,7 +98,7 @@ public class Uploader {
 		conn.setRequestMethod("POST");
 		OutputStream os = new DataOutputStream(conn.getOutputStream());
 		StringBuilder content = new StringBuilder();
-		content.append("resource=" + sha256 + "&apikey=" + APIKEY);
+		content.append("resource=" + scan_id + "&apikey=" + APIKEY);
 		os.write(content.toString().getBytes());
 		os.flush();
 		os.close();
@@ -104,27 +115,29 @@ public class Uploader {
 		conn.disconnect();
 		return sb.toString();
 	}
-	
+
 	/**
-	 * @param json the json String returned by scan
+	 * @param json
+	 *            the json String returned by scan
 	 */
-	public void analyzeReport(String json) {
+	public void analyseScanId(String json) {
 		scan_id = StringJsonParser.getValue(json, "scan_id").substring(1);
 		scan_id = scan_id.substring(0, scan_id.length() - 1);
-		
+
 		md5 = StringJsonParser.getValue(json, "md5").substring(1);
 		md5 = md5.substring(0, md5.length() - 1);
-		
+
 		sha256 = StringJsonParser.getValue(json, "sha256").substring(1);
 		sha256 = sha256.substring(0, sha256.length() - 1);
-		
+
 		sha1 = StringJsonParser.getValue(json, "sha1").substring(1);
 		sha1 = sha1.substring(0, sha1.length() - 1);
-		
+
 		isAnalyzed = true;
 	}
+
 	public static void main(String[] args) throws Exception {
-		Uploader u = new Uploader(new File("Havij.exe"));
-		System.out.println(u.getReport());
+
 	}
+	
 }
